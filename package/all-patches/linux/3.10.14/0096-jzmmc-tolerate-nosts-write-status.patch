@@ -1,0 +1,13 @@
+jzmmc: accept data-write completion on PRG_DONE without a CRC status token (NOSTS)
+
+--- a/drivers/mmc/host/jzmmc_v12.c
++++ b/drivers/mmc/host/jzmmc_v12.c
+@@ -158,7 +158,7 @@
+  * Error status including CRC_READ_ERROR, CRC_WRITE_ERROR,
+  * CRC_RES_ERR, TIME_OUT_RES, TIME_OUT_READ
+  */
+-#define ERROR_STAT		0x3f
++#define ERROR_STAT		0x27
+ 
+ #define jzmmc_check_pending(host, event)	\
+ 	test_and_clear_bit(event, &host->pending_events)

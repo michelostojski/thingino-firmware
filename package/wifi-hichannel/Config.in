@@ -1,0 +1,15 @@
+config BR2_PACKAGE_WIFI_HICHANNEL
+	bool "HiSilicon hichannel (Hi3861L, self-boot SDIO)"
+	select BR2_LINUX_KERNEL
+	select BR2_PACKAGE_THINGINO_KOPT_MMC
+	help
+	  Ingenic T31 port of the LuckfoxTECH hichannel/hcc driver for the
+	  HiSilicon Hi3861L over SDIO (MSC1).  The chip self-boots its own
+	  firmware (SPC021) from internal flash, so no host firmware download
+	  is performed (unlike the wifi-hi3881 driver).
+
+	  Requires the jzmmc NOSTS write-status kernel patch
+	  (all-patches/linux/3.10.14/*-jzmmc-tolerate-nosts-write-status.patch).
+
+	  Do not enable together with BR2_PACKAGE_WIFI_HI3881 - both drivers
+	  claim the same SDIO WiFi device.

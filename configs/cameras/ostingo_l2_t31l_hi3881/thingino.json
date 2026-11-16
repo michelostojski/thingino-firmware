@@ -1,0 +1,6 @@
+{
+  "gpio": {
+    "ircut": "52 53",
+    "ir850": { "pin": 38, "active_low": false }
+  }
+}

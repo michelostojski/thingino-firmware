@@ -49,6 +49,7 @@ $(eval $(call WIFI_ADD_DRIVER,BR2_PACKAGE_WIFI_ATK9,atk9,usb))
 $(eval $(call WIFI_ADD_DRIVER,BR2_PACKAGE_WIFI_BCM43438,bcmdhd,sdio))
 $(eval $(call WIFI_ADD_DRIVER,BR2_PACKAGE_WIFI_BCMDHD_AP6214A,bcmdhd,sdio))
 $(eval $(call WIFI_ADD_DRIVER,BR2_PACKAGE_WIFI_HI3881,hi3881,sdio))
+$(eval $(call WIFI_ADD_DRIVER,BR2_PACKAGE_WIFI_HICHANNEL,hichannel,sdio))
 $(eval $(call WIFI_ADD_DRIVER,BR2_PACKAGE_WIFI_MT7601U,mt7601sta,usb))
 $(eval $(call WIFI_ADD_DRIVER,BR2_PACKAGE_WIFI_RT5370,rt2800usb,usb))
 $(eval $(call WIFI_ADD_DRIVER,BR2_PACKAGE_WIFI_RTL8188EU,8188eu,usb))
@@ -178,8 +179,8 @@ define WIFI_INSTALL_TARGET_CMDS
 
 	# Wireless service script
 	$(WIFI_TEMPLATE_PYTHON) $(WIFI_TEMPLATE_RENDERER) --template $(WIFI_PKGDIR)/files/S36wireless.in \
-		--output $(TARGET_DIR)/etc/init.d/S36wireless $(WIFI_TEMPLATE_VARS)
-	chmod 0755 $(TARGET_DIR)/etc/init.d/S36wireless
+		--output $(TARGET_DIR)/etc/init.d/S10wireless $(WIFI_TEMPLATE_VARS)
+	chmod 0755 $(TARGET_DIR)/etc/init.d/S10wireless
 
 	# WPA supplicant script (runs before network, so DHCP can get a lease)
 	sed -e 's,@WLAN_STA_NETDEV@,$(WIFI_STA_NETDEV),g' \
