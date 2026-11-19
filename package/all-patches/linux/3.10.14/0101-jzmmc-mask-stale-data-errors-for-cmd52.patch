@@ -1,0 +1,35 @@
+jzmmc: do not fail data-less commands on stale data error bits
+
+The data error bits in the MSC status register (read timeout, data CRC)
+are sticky. After one failed CMD53 they stayed set, and check_error_status()
+then failed every following command, including CMD52 register accesses that
+carry no data at all. One bad transfer turned into a flood of
+"Error status" failures.
+
+Only the response error bits (TIME_OUT_RES, CRC_RES_ERR) can belong to a
+command without data, so mask the rest out when host->data is NULL.
+
+Applies on top of 0100-jzmmc-ignore-stale-error-irq.patch.
+
+--- a/drivers/mmc/host/jzmmc_v12.c
++++ b/drivers/mmc/host/jzmmc_v12.c
+@@ -313,7 +313,18 @@
+ }
+ static inline int check_error_status(struct jzmmc_host *host, unsigned int status)
+ {
+-	if (status & ERROR_STAT) {
++	unsigned int emask = ERROR_STAT;
++
++	/*
++	 * The data error bits in STAT are sticky: a read timeout or data CRC
++	 * error from an earlier CMD53 stays set until the next data transfer.
++	 * A command without data (CMD52) must only be failed by its own
++	 * response errors, otherwise every following CMD52 fails too.
++	 */
++	if (!host->data)
++		emask &= 0x22;	/* TIME_OUT_RES | CRC_RES_ERR */
++
++	if (status & emask) {
+ 		dev_err(host->dev, "Error status->0x%08X: cmd=%d, state=%d\n",
+ 			status, host->cmd->opcode, host->state);
+ 		return -1;

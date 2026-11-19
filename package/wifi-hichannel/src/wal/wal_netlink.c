@@ -55,6 +55,13 @@ hi_s32 oal_send_user_msg(hi_u8 *pbuf, hi_u32 len)
         return HI_FAILURE;
     }
 
+    /* No userspace listener has registered yet. Unicasting to pid 0 would
+       deliver the chip's message to the kernel socket itself, which sends
+       it straight back to the chip. Drop it instead. */
+    if (g_netlink_user.user_pid == 0) {
+        return HI_SUCCESS;
+    }
+
     if ((pbuf == HI_NULL) || (len == 0) || (len > MAX_USER_LONG_DATA_LEN)) {
         oam_error_log1("send_usrmsg is fail:len:%d\n", len);
         return HI_FAILURE;
@@ -100,10 +107,8 @@ static hi_void oal_recieve_user_msg(struct sk_buff *skb)
     if (skb == HI_NULL) {
         return;
     }
-    oam_warning_log1("DBG nl_rx skb_len=%d", skb->len);
 
     if (skb->len <= nlmsg_total_size(0)) {
-        oam_warning_log2("DBG nl_rx too short len=%d min=%d", skb->len, nlmsg_total_size(0));
         return;
     }
 
@@ -111,23 +116,10 @@ static hi_void oal_recieve_user_msg(struct sk_buff *skb)
     umsg = NLMSG_DATA(nlh);
     payload_len = nlh->nlmsg_len - NLMSG_HDRLEN;
     g_netlink_user.user_pid = nlh->nlmsg_pid;
-    oam_warning_log3("DBG nl_rx plen=%d id=0x%x pid=0x%x",
-                     payload_len, (payload_len > 0) ? (hi_u8)umsg[0] : 0xff, nlh->nlmsg_pid);
 
     if (payload_len > MAX_USER_LONG_DATA_LEN) {
         oam_error_log1("payload len[%d] is fail\n", payload_len);
         return;
-    }
-
-    /* hexdump now that umsg/payload_len are valid (was reading them uninitialised before) */
-    {
-        hi_u32 k;
-        for (k = 0; k < payload_len; k += 4) {
-            hi_u32 w = 0; int b;
-            for (b = 0; b < 4 && (k + b) < payload_len; b++)
-                w |= ((hi_u32)(hi_u8)umsg[k + b]) << (8 * b);
-            oam_warning_log2("DBG nlrx +%d = 0x%08x", k, w);
-        }
     }
 
     /* match stock: small control msgs go HIGH-PRIORITY MSG, only bulk goes DATA */
@@ -145,7 +137,6 @@ static hi_void oal_recieve_user_msg(struct sk_buff *skb)
     oal_netbuf_prev(netbuf) = HI_NULL;
 
     ret = hcc_tx_data_adapt(netbuf, type, HCC_SUB_TYPE_USER_MSG);
-    oam_warning_log2("DBG nl_rx tx_adapt ret=%d type=%d", ret, type);
     if (ret != HI_SUCCESS) {
         oam_error_log0("hcc_tx_data_adapt is fail\n");
         oal_netbuf_free(netbuf);

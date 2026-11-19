@@ -8,8 +8,15 @@ config BR2_PACKAGE_WIFI_HICHANNEL
 	  firmware (SPC021) from internal flash, so no host firmware download
 	  is performed (unlike the wifi-hi3881 driver).
 
-	  Requires the jzmmc NOSTS write-status kernel patch
-	  (all-patches/linux/3.10.14/*-jzmmc-tolerate-nosts-write-status.patch).
+	  Requires the jzmmc host fixes in all-patches/linux/3.10.14
+	  (0099 drop CMD53 CRC retry, 0100 ignore stale error irq,
+	  0101 mask stale data errors for CMD52) and pull-ups on the
+	  SDIO CMD/DAT0 pins (package/wifi/files/mmc_gpio_pb).
+
+	  Also installs /usr/bin/hinl and /etc/init.d/S39hinl.  The chip
+	  associates and runs DHCP itself; "hinl up" sends the credentials
+	  from /etc/hinl.conf (ssid=, pass=) and copies the chip's MAC and
+	  address to wlan0.
 
 	  Do not enable together with BR2_PACKAGE_WIFI_HI3881 - both drivers
 	  claim the same SDIO WiFi device.

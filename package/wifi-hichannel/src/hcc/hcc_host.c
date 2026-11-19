@@ -384,16 +384,6 @@ static hi_u32 hcc_tx_flow_ctrl_handle(hcc_handler_stru *hcc_handler, hcc_queue_t
         }
     }
 
-       {
-        /* print only on change, so the 0 -> nonzero credit transition is
-         * visible without flooding and wrapping the tiny kernel log ring */
-    static hi_u32 last_priority_cnt = 0xFFFFFFFF;
-    if (priority_cnt != last_priority_cnt) {
-            last_priority_cnt = priority_cnt;
-            oam_warning_log1("DBG tx_flow raw_credit=0x%x", priority_cnt);
-        }
-    }
-
     return ret;
 }
 
@@ -891,13 +881,8 @@ hi_u32 hcc_host_init(struct hcc_bus_adpta_ops* hcc_bus_adpta_opt)
         goto failed_reg_heartbeat_msg;
     }
 
-      #if 0 /* HEART_BEAT_OPEN removed: stock hcc_host_init sends only SDIO_READY (confirmed by .ko disasm) */
-    if (oal_channel_send_msg(hcc_handler->hi_channel, H2D_MSG_HEART_BEAT_OPEN) != HI_SUCCESS) {
-        oam_error_log0("hcc_host_init:: start heartbeat fail");
-        goto failed_reg_heartbeat_msg;
-    }
-
-#endif
+    /* H2D_MSG_HEART_BEAT_OPEN is deliberately not sent: the stock driver
+       sends only H2D_MSG_SDIO_READY (below). */
 #ifdef _PRE_HICHANNEL_HDR_OPT
     if (oal_channel_send_msg(hcc_handler->hi_channel, H2D_MSG_HICHANNEL_HDR_OPT) != HI_SUCCESS) {
         oam_error_log0("hcc_host_init:: hichannel_hdr opt fail");
@@ -919,13 +904,6 @@ hi_u32 hcc_host_init(struct hcc_bus_adpta_ops* hcc_bus_adpta_opt)
 		oam_error_log0("hcc_host_init:: send ready msg fail");
 		goto failed_send_ready_msg;
 	}
-
-	#if 0 /* HEART_BEAT_OPEN: stock sends only SDIO_READY. Disabled to test whether
-       * the chip answers commands without it. */
-	if (oal_channel_send_msg(hcc_handler->hi_channel, H2D_MSG_HEART_BEAT_OPEN) != HI_SUCCESS) {
-		oam_error_log0("hcc_host_init:: start heartbeat fail");
-	}
-#endif
 
 	oam_warning_log0("hcc_host_init SUCCESSFULLY");
 	return HI_SUCCESS;

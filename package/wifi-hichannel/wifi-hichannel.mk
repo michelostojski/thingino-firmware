@@ -35,6 +35,11 @@ define WIFI_HICHANNEL_LINUX_CONFIG_FIXUPS
 	$(call KCONFIG_DISABLE_OPT,CONFIG_MMC1_PIO_MODE)
 endef
 
+# tools/hinl.c is the userspace side: it talks to the chip's application
+# firmware over netlink 28 (watchdog off, Wi-Fi connect, copy the chip's
+# DHCP lease to wlan0).  S39hinl runs "hinl up" at boot when /etc/hinl.conf
+# (ssid=, pass=) exists.
+#
 # Build the module via kbuild against the kernel tree.  The driver Makefile
 # defines obj-m / EXTRA_CFLAGS unconditionally at parse time (env_config.mk
 # sets -D_PRE_OS_PLATFORM=_PRE_PLATFORM_JZ), so "M=$(@D) modules" is enough.
@@ -43,6 +48,8 @@ define WIFI_HICHANNEL_BUILD_CMDS
 		ARCH=$(KERNEL_ARCH) \
 		CROSS_COMPILE=$(TARGET_CROSS) \
 		M=$(@D) modules
+	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_LDFLAGS) -Wall \
+		-o $(@D)/tools/hinl $(@D)/tools/hinl.c
 endef
 
 LINUX_CONFIG_LOCALVERSION = $(shell awk -F "=" '/^CONFIG_LOCALVERSION=/ {print $$2}' $(BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE))
@@ -50,6 +57,9 @@ LINUX_CONFIG_LOCALVERSION = $(shell awk -F "=" '/^CONFIG_LOCALVERSION=/ {print $
 define WIFI_HICHANNEL_INSTALL_TARGET_CMDS
 	$(INSTALL) -D -m 0644 $(@D)/$(HICHANNEL_MODULE_NAME).ko \
 		$(TARGET_DIR)/usr/lib/modules/$(KERNEL_VERSION)$(call qstrip,$(LINUX_CONFIG_LOCALVERSION))/extra/$(HICHANNEL_MODULE_NAME).ko
+	$(INSTALL) -D -m 0755 $(@D)/tools/hinl $(TARGET_DIR)/usr/bin/hinl
+	$(INSTALL) -D -m 0755 $(WIFI_HICHANNEL_PKGDIR)/files/S39hinl \
+		$(TARGET_DIR)/etc/init.d/S39hinl
 endef
 
 $(eval $(kernel-module))
