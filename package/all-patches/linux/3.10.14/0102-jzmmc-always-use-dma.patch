@@ -1,0 +1,25 @@
+jzmmc: use DMA for every data transfer (PIO_THRESHOLD 0)
+
+Transfers shorter than PIO_THRESHOLD (64 bytes) take the PIO path. During
+the CG721 bring-up (T31ZL + Hi3861L over 1-bit SDIO on MSC1) CMD53 transfers
+on the PIO path were seen to stall, and the threshold was set to 0 in the
+build tree so that every transfer uses DMA.
+
+This patch records that setting, because it is the one the CG721 Wi-Fi
+bring-up was validated with. It is a global change to the host driver.
+Whether the PIO path still stalls now that the SDIO data line has its
+pull-up has not been re-tested.
+
+Applies on top of 0101-jzmmc-mask-stale-data-errors-for-cmd52.patch.
+
+--- a/drivers/mmc/host/jzmmc_v12.c
++++ b/drivers/mmc/host/jzmmc_v12.c
+@@ -41,7 +41,7 @@
+ 
+ #define MAX_SEGS		128	/* max count of sg */
+ #define TIMEOUT_PERIOD		500	/* msc operation timeout detect period */
+-#define PIO_THRESHOLD		64	/* use pio mode if data length < PIO_THRESHOLD */
++#define PIO_THRESHOLD		0	/* 0: always DMA, see patch description */
+ #define CLK_CTRL
+ #define IO_SAMPLE_PERIOD_MS	2000
+ 
