@@ -4,7 +4,7 @@
  * Author: dujinxin
  * Create: 2020-09-28
  */
-/* Í·ÎÄ¼ş°üº¬ */
+/* ÃÂ·ÃÃ„Å’Ã¾Â°Ã¼ÂºÂ¬ */
 #include "oal_netbuf.h"
 #include "hcc_host.h"
 #include "oal_mm.h"
@@ -109,11 +109,11 @@ static hi_u32 hcc_host_check_hdr(hcc_header_stru *hcc_hdr)
 }
 
 /*****************************************************************************
- ¹¦ÄÜÃèÊö  : ´¦Àí´Ódevice½ÓÊÕµÄÏûÏ¢
- ÊäÈë²ÎÊı  : unc_buf Í¨ÓÃbuf,´æ·Å¸÷ÖÖË½ÓĞÊı¾İ½á¹¹£¬¸ù¾İ²»Í¬µÄÊı¾İ½á¹¹µ÷ÓÃ²»
-             Í¬µÄ´¦Àíº¯Êı
- ×¢ÒâÊÂÏî  : ÒÔºóÒªÀ©Õ¹ÆäËûÀàĞÍ£¬Ö»Ğècase·ÖÖ§ÖĞĞÂÔö´¦Àíº¯Êı
- ·µ »Ø Öµ  : HI_SUCCESS ÏûÏ¢´¦Àí³É¹¦£¬ HI_FAIL ÏûÏ¢´¦ÀíÊ§°Ü£¬ÏûÏ¢Í·Òì³£
+ Â¹Å Ã„ÃœÃƒÃ¨ÃŠÃ¶  : Å½Å Ã€Ã­Å½Ã“deviceÅ“Ã“ÃŠÃ•ÂµÃ„ÃÃ»ÃÂ¢
+ ÃŠÃ¤ÃˆÃ«Â²ÃÃŠÃ½  : unc_buf ÃÅ¡Ã“Ãƒbuf,Å½Ã¦Â·Ã…Å¾Ã·Ã–Ã–Ã‹Å“Ã“ÃÃŠÃ½Å¸ÃÅ“Ã¡Â¹Â¹Â£Â¬Å¾Ã¹Å¸ÃÂ²Â»ÃÂ¬ÂµÃ„ÃŠÃ½Å¸ÃÅ“Ã¡Â¹Â¹ÂµÃ·Ã“ÃƒÂ²Â»
+             ÃÂ¬ÂµÃ„Å½Å Ã€Ã­ÂºÂ¯ÃŠÃ½
+ Ã—Â¢Ã’Ã¢ÃŠÃ‚ÃÃ®  : Ã’Ã”ÂºÃ³Ã’ÂªÃ€Â©Ã•Â¹Ã†Ã¤Ã‹Ã»Ã€Ã ÃÃÂ£Â¬Ã–Â»ÃÃ¨caseÂ·Ã–Ã–Â§Ã–ÃÃÃ‚Ã”Ã¶Å½Å Ã€Ã­ÂºÂ¯ÃŠÃ½
+ Â·Âµ Â»Ã˜ Ã–Âµ  : HI_SUCCESS ÃÃ»ÃÂ¢Å½Å Ã€Ã­Â³Ã‰Â¹Å Â£Â¬ HI_FAIL ÃÃ»ÃÂ¢Å½Å Ã€Ã­ÃŠÂ§Â°ÃœÂ£Â¬ÃÃ»ÃÂ¢ÃÂ·Ã’Ã¬Â³Â£
 *****************************************************************************/
 static hi_u32 hcc_adapt_rx_data_process(hcc_unc_struc *unc_buf)
 {
@@ -184,7 +184,7 @@ static hi_u32 hcc_host_tx(hcc_handler_stru *hcc_handler, oal_netbuf_stru *netbuf
         hcc_handler->hcc_bus_ops->stop_tcpip_tx_queue(hcc_queue);
     }
 
-    /* ×¢²á»Øµ÷½Ó¿Ú£¬¶ª°ü²Ù×÷ */
+    /* Ã—Â¢Â²Ã¡Â»Ã˜ÂµÃ·Å“Ã“Â¿ÃšÂ£Â¬Â¶ÂªÂ°Ã¼Â²Ã™Ã—Ã· */
     if (hcc_handler->hcc_bus_ops != HI_NULL &&
         hcc_handler->hcc_bus_ops->tx_discard_key_frame) {
         ret = hcc_handler->hcc_bus_ops->tx_discard_key_frame(param->queue_id, hcc_queue, unc_buf);
@@ -195,7 +195,7 @@ static hi_u32 hcc_host_tx(hcc_handler_stru *hcc_handler, oal_netbuf_stru *netbuf
         }
     }
 
-    /* ×¢²á»Øµ÷½Ó¿Ú£¬´¦Àí¹Ø¼üÖ¡ÅÅĞò,¿ÉÒÔ½«¹Ø¼üÖ¡²åÈë¶ÓÁĞÇ°Ãæ */
+    /* Ã—Â¢Â²Ã¡Â»Ã˜ÂµÃ·Å“Ã“Â¿ÃšÂ£Â¬Å½Å Ã€Ã­Â¹Ã˜Å’Ã¼Ã–Â¡Ã…Ã…ÃÃ²,Â¿Ã‰Ã’Ã”Å“Â«Â¹Ã˜Å’Ã¼Ã–Â¡Â²Ã¥ÃˆÃ«Â¶Ã“ÃÃÃ‡Â°ÃƒÃ¦ */
     if (hcc_handler->hcc_bus_ops != HI_NULL &&
         hcc_handler->hcc_bus_ops->tx_sort_key_frame) {
         ret = hcc_handler->hcc_bus_ops->tx_sort_key_frame(param->queue_id, hcc_queue, unc_buf);
@@ -211,7 +211,7 @@ static hi_u32 hcc_host_tx(hcc_handler_stru *hcc_handler, oal_netbuf_stru *netbuf
     return HI_SUCCESS;
 }
 
-/* SDIO ´«ÊäÍøÂçÊı¾İÊÊÅäÔ¤´¦Àí */
+/* SDIO Å½Â«ÃŠÃ¤ÃÃ¸Ã‚Ã§ÃŠÃ½Å¸ÃÃŠÃŠÃ…Ã¤Ã”â‚¬Å½Å Ã€Ã­ */
 hi_u32 hcc_tx_data_adapt(oal_netbuf_stru *netbuf, hcc_type_enum type, hi_u32 sub_type)
 {
     hi_u32 ret;
@@ -224,6 +224,7 @@ hi_u32 hcc_tx_data_adapt(oal_netbuf_stru *netbuf, hcc_type_enum type, hi_u32 sub
     }
 
     oal_netbuf_push(netbuf, HCC_HDR_TOTAL_LEN);
+    memset(oal_netbuf_data(netbuf), 0,    HCC_HDR_TOTAL_LEN);
 
     hcc_hdr_param_init(&param, type, sub_type, 0, HCC_FC_NONE, queue_id);
 
@@ -260,7 +261,7 @@ static hcc_unc_struc *hcc_adapt_netbuf_len_align(hcc_unc_struc *unc_buf, oal_net
         }
     }
     oal_netbuf_put(netbuf, tail_room_len);
-    /* ÖØĞÂÉèÖÃuncÅäÖÃ */
+    /* Ã–Ã˜ÃÃ‚Ã‰Ã¨Ã–ÃƒuncÃ…Ã¤Ã–Ãƒ */
     unc_buf->buf = oal_netbuf_data(netbuf);
     unc_buf->length = oal_netbuf_len(netbuf);
     unc_buf->priv = (hi_void *)netbuf;
@@ -279,7 +280,7 @@ static hcc_unc_struc* hcc_adapt_netbuf_alloc(hi_s32 len)
     }
 
     oal_netbuf_put(netbuf, len);
-    /* ÖØĞÂÉèÖÃuncÅäÖÃ */
+    /* Ã–Ã˜ÃÃ‚Ã‰Ã¨Ã–ÃƒuncÃ…Ã¤Ã–Ãƒ */
     return hcc_structure_conversion(netbuf, NETBUF_STRU_TYPE);
 }
 
@@ -292,16 +293,16 @@ static hcc_unc_struc* hcc_adapt_nomal_alloc(hi_s32 len)
         return HI_NULL;
     }
     p_normal.length = len;
-    /* ÖØĞÂÉèÖÃuncÅäÖÃ */
+    /* Ã–Ã˜ÃÃ‚Ã‰Ã¨Ã–ÃƒuncÃ…Ã¤Ã–Ãƒ */
     return hcc_structure_conversion(&p_normal, NORMAL_STRU_TYPE);
 }
 
 /*****************************************************************************
- ¹¦ÄÜÃèÊö  : ¼ì²éÊÇ·ñĞèÒª¶ªÖ¡£¬Èç¹û²åÈëTX¶ÓÁĞµÄÊı¾İÌ«¶à£¬¿É¶ªµôÒ»Ğ©·Ç¹Ø¼üÊı¾İ
- ÊäÈë²ÎÊı  : queue_id ¶ÓÁĞid
-             hcc_queue¶ÓÁĞÍ·Ö¸Õë
-             unc_buf Í¨ÓÃÊı¾İ½á¹¹Ö¸Õë
- ·µ »Ø Öµ  : HI_SUCCESS ¿ÉÒÔ¶ªµô´ËÖ¡£¬HI_FAIL´ËÖ¡²»ÄÜ¶ªµô
+ Â¹Å Ã„ÃœÃƒÃ¨ÃŠÃ¶  : Å’Ã¬Â²Ã©ÃŠÃ‡Â·Ã±ÃÃ¨Ã’ÂªÂ¶ÂªÃ–Â¡Â£Â¬ÃˆÃ§Â¹Ã»Â²Ã¥ÃˆÃ«TXÂ¶Ã“ÃÃÂµÃ„ÃŠÃ½Å¸ÃÃŒÂ«Â¶Ã Â£Â¬Â¿Ã‰Â¶ÂªÂµÃ´Ã’Â»ÃÂ©Â·Ã‡Â¹Ã˜Å’Ã¼ÃŠÃ½Å¸Ã
+ ÃŠÃ¤ÃˆÃ«Â²ÃÃŠÃ½  : queue_id Â¶Ã“ÃÃid
+             hcc_queueÂ¶Ã“ÃÃÃÂ·Ã–Å¾Ã•Ã«
+             unc_buf ÃÅ¡Ã“ÃƒÃŠÃ½Å¸ÃÅ“Ã¡Â¹Â¹Ã–Å¾Ã•Ã«
+ Â·Âµ Â»Ã˜ Ã–Âµ  : HI_SUCCESS Â¿Ã‰Ã’Ã”Â¶ÂªÂµÃ´Å½Ã‹Ã–Â¡Â£Â¬HI_FAILÅ½Ã‹Ã–Â¡Â²Â»Ã„ÃœÂ¶ÂªÂµÃ´
 *****************************************************************************/
 static hi_u32 hcc_adapt_check_discard_frame(hi_u32 queue_id,
     hcc_trans_queue_stru *hcc_queue, hcc_unc_struc *unc_buf)
@@ -320,9 +321,9 @@ static hi_u32 hcc_adapt_check_discard_frame(hi_u32 queue_id,
 }
 
 /*****************************************************************************
- ¹¦ÄÜÃèÊö  : ÊÍ·ÅË½ÓĞÊı¾İ½á¹¹ÀàĞÍ
- ÊäÈë²ÎÊı  : data Í¨ÓÃÊı¾İ½á¹¹Ö¸Õë
- ·µ »Ø Öµ  : ÎŞ
+ Â¹Å Ã„ÃœÃƒÃ¨ÃŠÃ¶  : ÃŠÃÂ·Ã…Ã‹Å“Ã“ÃÃŠÃ½Å¸ÃÅ“Ã¡Â¹Â¹Ã€Ã ÃÃ
+ ÃŠÃ¤ÃˆÃ«Â²ÃÃŠÃ½  : data ÃÅ¡Ã“ÃƒÃŠÃ½Å¸ÃÅ“Ã¡Â¹Â¹Ã–Å¾Ã•Ã«
+ Â·Âµ Â»Ã˜ Ã–Âµ  : ÃÃ
 *****************************************************************************/
 static hi_void hcc_adapt_mem_free(hi_void *data)
 {
@@ -352,7 +353,7 @@ static hi_void hcc_adapt_mem_free(hi_void *data)
 }
 
 /*****************************************************************************
- ¹¦ÄÜÃèÊö  : stop tcpip tx_queue
+ Â¹Å Ã„ÃœÃƒÃ¨ÃŠÃ¶  : stop tcpip tx_queue
 *****************************************************************************/
 hi_void hcc_adapt_stop_tcpip_tx_queue(hcc_trans_queue_stru *hcc_queue)
 {
@@ -371,7 +372,7 @@ hi_void hcc_adapt_stop_tcpip_tx_queue(hcc_trans_queue_stru *hcc_queue)
 }
 
 /*****************************************************************************
- ¹¦ÄÜÃèÊö  : awake tcpip tx_queue
+ Â¹Å Ã„ÃœÃƒÃ¨ÃŠÃ¶  : awake tcpip tx_queue
 *****************************************************************************/
 hi_void hcc_adapt_awake_tcpip_tx_queue(hcc_trans_queue_stru *hcc_queue)
 {
@@ -388,15 +389,15 @@ hi_void hcc_adapt_awake_tcpip_tx_queue(hcc_trans_queue_stru *hcc_queue)
 }
 
 /*****************************************************************************
- ¹¦ÄÜÃèÊö  : awake tcp/ip tx_queue
+ Â¹Å Ã„ÃœÃƒÃ¨ÃŠÃ¶  : awake tcp/ip tx_queue
 *****************************************************************************/
 
 /*****************************************************************************
- ¹¦ÄÜÃèÊö  : Õë¶Ô²»Í¨½á¹¹ÀàĞÍµÄ½á¹¹Ìå×ö¶ÔÆë²Ù×÷
- ÊäÈë²ÎÊı  : unc_buf Í¨ÓÃÊı¾İ½á¹¹Ö¸Õë
-             align_len ¶ÔÆë³¤¶È
- ×¢ÒâÊÂÏî  £ºÈç¹ûÓĞĞ©Êı¾İ½á¹¹ÒÑ¾­ÓĞ¶ÔÆë£¬¿ÉÒÔÖ±½Ó·µ»Ø
- ·µ »Ø Öµ  : ·µ»ØÍ¨ÓÃÊı¾İ½á¹¹Ö¸Õë
+ Â¹Å Ã„ÃœÃƒÃ¨ÃŠÃ¶  : Ã•Ã«Â¶Ã”Â²Â»ÃÅ¡Å“Ã¡Â¹Â¹Ã€Ã ÃÃÂµÃ„Å“Ã¡Â¹Â¹ÃŒÃ¥Ã—Ã¶Â¶Ã”Ã†Ã«Â²Ã™Ã—Ã·
+ ÃŠÃ¤ÃˆÃ«Â²ÃÃŠÃ½  : unc_buf ÃÅ¡Ã“ÃƒÃŠÃ½Å¸ÃÅ“Ã¡Â¹Â¹Ã–Å¾Ã•Ã«
+             align_len Â¶Ã”Ã†Ã«Â³â‚¬Â¶Ãˆ
+ Ã—Â¢Ã’Ã¢ÃŠÃ‚ÃÃ®  Â£ÂºÃˆÃ§Â¹Ã»Ã“ÃÃÂ©ÃŠÃ½Å¸ÃÅ“Ã¡Â¹Â¹Ã’Ã‘Å¸Â­Ã“ÃÂ¶Ã”Ã†Ã«Â£Â¬Â¿Ã‰Ã’Ã”Ã–Â±Å“Ã“Â·ÂµÂ»Ã˜
+ Â·Âµ Â»Ã˜ Ã–Âµ  : Â·ÂµÂ»Ã˜ÃÅ¡Ã“ÃƒÃŠÃ½Å¸ÃÅ“Ã¡Â¹Â¹Ã–Å¾Ã•Ã«
 *****************************************************************************/
 static hcc_unc_struc *hcc_adapt_len_align(hcc_unc_struc *unc_buf, int align_len)
 {
@@ -414,11 +415,11 @@ static hcc_unc_struc *hcc_adapt_len_align(hcc_unc_struc *unc_buf, int align_len)
 }
 
 /*****************************************************************************
- ¹¦ÄÜÃèÊö  : ÉêÇëË½ÓĞÊı¾İ½á¹¹ÄÚ´æ£¬²¢×ª»»ÎªÍ¨ÓÃÊı¾İ½á¹¹
- ÊäÈë²ÎÊı  : len ÉêÇë³¤¶È£¬µ¥Î»£ºByte
-             type ÉêÇëµÄË½ÓĞÊı¾İ½á¹¹ÀàĞÍ
- ×¢ÒâÊÂÏî  £ººóĞøÒªÀ©Õ¹£¬¿ÉÔÚcase·ÖÖ§ĞÂÔöÆäËûÊı¾İ½á¹¹ÀàĞÍ
- ·µ »Ø Öµ  : ·µ»ØÍ¨ÓÃÊı¾İ½á¹¹Ö¸Õë
+ Â¹Å Ã„ÃœÃƒÃ¨ÃŠÃ¶  : Ã‰ÃªÃ‡Ã«Ã‹Å“Ã“ÃÃŠÃ½Å¸ÃÅ“Ã¡Â¹Â¹Ã„ÃšÅ½Ã¦Â£Â¬Â²Â¢Ã—ÂªÂ»Â»ÃÂªÃÅ¡Ã“ÃƒÃŠÃ½Å¸ÃÅ“Ã¡Â¹Â¹
+ ÃŠÃ¤ÃˆÃ«Â²ÃÃŠÃ½  : len Ã‰ÃªÃ‡Ã«Â³â‚¬Â¶ÃˆÂ£Â¬ÂµÂ¥ÃÂ»Â£ÂºByte
+             type Ã‰ÃªÃ‡Ã«ÂµÃ„Ã‹Å“Ã“ÃÃŠÃ½Å¸ÃÅ“Ã¡Â¹Â¹Ã€Ã ÃÃ
+ Ã—Â¢Ã’Ã¢ÃŠÃ‚ÃÃ®  Â£ÂºÂºÃ³ÃÃ¸Ã’ÂªÃ€Â©Ã•Â¹Â£Â¬Â¿Ã‰Ã”ÃšcaseÂ·Ã–Ã–Â§ÃÃ‚Ã”Ã¶Ã†Ã¤Ã‹Ã»ÃŠÃ½Å¸ÃÅ“Ã¡Â¹Â¹Ã€Ã ÃÃ
+ Â·Âµ Â»Ã˜ Ã–Âµ  : Â·ÂµÂ»Ã˜ÃÅ¡Ã“ÃƒÃŠÃ½Å¸ÃÅ“Ã¡Â¹Â¹Ã–Å¾Ã•Ã«
 *****************************************************************************/
 static hcc_unc_struc* hcc_adapt_alloc_unc_buf(hi_s32 len, hcc_stru_type type)
 {
@@ -434,12 +435,12 @@ static hcc_unc_struc* hcc_adapt_alloc_unc_buf(hi_s32 len, hcc_stru_type type)
 }
 
 /*****************************************************************************
- ¹¦ÄÜÃèÊö  : Á÷¿Ø´¦Àíº¯Êı
- ÊäÈë²ÎÊı  : flow_type Êı¾İÀàĞÍ£¬HCC_FLOWCTRL_CREDITÎª¹ÜÀíÖ¡£¬HCC_FLOWCTRL_SDIO
-             ÎªÊı¾İÖ¡
-             dev_mem_cnt deviceÄÚ´æ×ÊÔ´Êı
- ·µ »Ø Öµ  : HI_SUCCESS ÄÚ´æ³ä×ã£¬¼ÌĞø·¢ËÍÊı¾İ£¬ HI_FAIL deviceÄÚ´æ²»×ã£¬Í£Ö¹·¢
-             ËÍÊı¾İ
+ Â¹Å Ã„ÃœÃƒÃ¨ÃŠÃ¶  : ÃÃ·Â¿Ã˜Å½Å Ã€Ã­ÂºÂ¯ÃŠÃ½
+ ÃŠÃ¤ÃˆÃ«Â²ÃÃŠÃ½  : flow_type ÃŠÃ½Å¸ÃÃ€Ã ÃÃÂ£Â¬HCC_FLOWCTRL_CREDITÃÂªÂ¹ÃœÃ€Ã­Ã–Â¡Â£Â¬HCC_FLOWCTRL_SDIO
+             ÃÂªÃŠÃ½Å¸ÃÃ–Â¡
+             dev_mem_cnt deviceÃ„ÃšÅ½Ã¦Ã—ÃŠÃ”Å½ÃŠÃ½
+ Â·Âµ Â»Ã˜ Ã–Âµ  : HI_SUCCESS Ã„ÃšÅ½Ã¦Â³Ã¤Ã—Ã£Â£Â¬Å’ÃŒÃÃ¸Â·Â¢Ã‹ÃÃŠÃ½Å¸ÃÂ£Â¬ HI_FAIL deviceÃ„ÃšÅ½Ã¦Â²Â»Ã—Ã£Â£Â¬ÃÂ£Ã–Â¹Â·Â¢
+             Ã‹ÃÃŠÃ½Å¸Ã
 *****************************************************************************/
 static hi_u32 hcc_adapt_tx_flow_ctrl_handle(hi_u16 flow_type, hi_u8 dev_mem_cnt)
 {
@@ -457,11 +458,11 @@ static hi_u32 hcc_adapt_tx_flow_ctrl_handle(hi_u16 flow_type, hi_u8 dev_mem_cnt)
 }
 
 /*****************************************************************************
- ¹¦ÄÜÃèÊö  : ²âÊÔhccÍ¨µÀ¶ÁËÙÂÊ£¬Í³¼Æ´ÓdeviceÊÕµ½°üµÄ¸öÊı¡£
- ÊäÈë²ÎÊı  : hcc_hdr hccÏûÏ¢Í·
-             buf ´æ·ÅÊı¾İ»º³åÇø
-             len »º³åÇø´æ·ÅÊı¾İ´óĞ¡
- ·µ »Ø Öµ  : ÎŞ
+ Â¹Å Ã„ÃœÃƒÃ¨ÃŠÃ¶  : Â²Ã¢ÃŠÃ”hccÃÅ¡ÂµÃ€Â¶ÃÃ‹Ã™Ã‚ÃŠÂ£Â¬ÃÂ³Å’Ã†Å½Ã“deviceÃŠÃ•ÂµÅ“Â°Ã¼ÂµÃ„Å¾Ã¶ÃŠÃ½Â¡Â£
+ ÃŠÃ¤ÃˆÃ«Â²ÃÃŠÃ½  : hcc_hdr hccÃÃ»ÃÂ¢ÃÂ·
+             buf Å½Ã¦Â·Ã…ÃŠÃ½Å¸ÃÂ»ÂºÂ³Ã¥Ã‡Ã¸
+             len Â»ÂºÂ³Ã¥Ã‡Ã¸Å½Ã¦Â·Ã…ÃŠÃ½Å¸ÃÅ½Ã³ÃÂ¡
+ Â·Âµ Â»Ã˜ Ã–Âµ  : ÃÃ
 *****************************************************************************/
 static hi_void hcc_rx_test_speed(hcc_header_stru *hcc_hdr, hi_char* buf, int len)
 {
@@ -483,7 +484,7 @@ static void hcc_test_write(char* buf, int len, hcc_type_enum type, hi_u32 sub_ty
 {
     oal_netbuf_stru *netbuf = HI_NULL;
 
-    netbuf = oal_netbuf_alloc(len + HCC_HDR_TOTAL_LEN + HIBUS_H2D_SCATT_BUFFLEN_ALIGN, 0, 4); /* 4: 4×Ö½Ú¶ÔÆë */
+    netbuf = oal_netbuf_alloc(len + HCC_HDR_TOTAL_LEN + HIBUS_H2D_SCATT_BUFFLEN_ALIGN, 0, 4); /* 4: 4Ã—Ã–Å“ÃšÂ¶Ã”Ã†Ã« */
     if (netbuf == HI_NULL) {
         oam_error_log0("hcc_test_write:: netbuf_alloc failed!");
         return;
@@ -505,9 +506,9 @@ static void hcc_test_write(char* buf, int len, hcc_type_enum type, hi_u32 sub_ty
 }
 
 /*****************************************************************************
- ¹¦ÄÜÃèÊö  : ²âÊÔhccÍ¨µÀĞ´ËÙÂÊ
- ÊäÈë²ÎÊı  : ÎŞ
- ·µ »Ø Öµ  : ÎŞ
+ Â¹Å Ã„ÃœÃƒÃ¨ÃŠÃ¶  : Â²Ã¢ÃŠÃ”hccÃÅ¡ÂµÃ€ÃÅ½Ã‹Ã™Ã‚ÃŠ
+ ÃŠÃ¤ÃˆÃ«Â²ÃÃŠÃ½  : ÃÃ
+ Â·Âµ Â»Ã˜ Ã–Âµ  : ÃÃ
 *****************************************************************************/
 hi_void hcc_test_channel_speed(hi_void)
 {
@@ -533,9 +534,9 @@ hi_void hcc_test_channel_speed(hi_void)
     }
     do_gettimeofday(&end_tv);
     len = (package_cnt * MAX_TEST_PACKAGE_LEN);
-    mlen = 1024 * 1024;  /* 1024: bit, Kb, Mb Ö®¼ä×ª»»µ¥Ôª */
+    mlen = 1024 * 1024;  /* 1024: bit, Kb, Mb Ã–Â®Å’Ã¤Ã—ÂªÂ»Â»ÂµÂ¥Ã”Âª */
     speed = len / mlen;
-    printk("test write over. speed:%ld Mbps\n", (speed / (end_tv.tv_sec - start_tv.tv_sec)) * 8); /* 8: Byte,bit×ª»» */
+    printk("test write over. speed:%ld Mbps\n", (speed / (end_tv.tv_sec - start_tv.tv_sec)) * 8); /* 8: Byte,bitÃ—ÂªÂ»Â» */
 }
 #endif
 

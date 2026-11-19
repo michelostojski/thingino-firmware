@@ -18,6 +18,7 @@
 #include <linux/pm_runtime.h>
 #include <linux/mmc/sdio.h>
 #include <linux/scatterlist.h>
+#include <linux/slab.h>
 #include <linux/version.h>
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0))
 #include <linux/sched/clock.h>
@@ -330,7 +331,8 @@ hi_s32 oal_sdio_transfer_rx_reserved_buff(const oal_channel_stru *hi_sdio)
     }
 
     ret = oal_sdio_readsb(hi_sdio->func, 0, hi_sdio->rx_buf, ul_extend_len);
-
+    printk(KERN_ERR "RXD ret=%d len=0x%x %*ph\n", ret, ul_extend_len,
+           32, hi_sdio->rx_buf);
     return ret;
 }
 
@@ -399,31 +401,38 @@ hi_s32 oal_sdio_tranfer_commit_memory(const oal_channel_stru *hi_sdio,
     } else {
         sum_len = hi_byte_align(sum_len, HISDIO_BLOCK_SIZE);
     }
-
-    oal_sdio_claim_host(hi_sdio->func);
-    /* jzmmc PIO stalls on a multi-block CMD53 (blks:1/5). Transfer the FIFO
-       one block at a time so each block is a CMD53 the PIO path completes. */
     {
-        hi_u32 off;
-        hi_u8 *buf = (rw == SDIO_WRITE) ? hi_sdio->tx_buf : hi_sdio->rx_buf;
-        ret = 0;
-        for (off = 0; off < sum_len; off += HISDIO_BLOCK_SIZE) {
-            hi_u32 chunk = sum_len - off;
-            if (chunk > HISDIO_BLOCK_SIZE) {
-                chunk = HISDIO_BLOCK_SIZE;
-            }
-            if (rw == SDIO_WRITE) {
-                ret = oal_sdio_writesb(hi_sdio->func, 0, buf + off, chunk);
-            } else {
-                ret = oal_sdio_readsb(hi_sdio->func, 0, buf + off, chunk);
-            }
-            if (ret) {
-                break;
-            }
+        static int txb_count;
+       if (rw == SDIO_WRITE && txb_count < 40) {
+            txb_count++;
+            printk(KERN_ERR "TXB len=%u %*ph\n", sum_len, 48, hi_sdio->tx_buf);
+            if (sum_len > 64)
+                printk(KERN_ERR "TXC %*ph\n", 64, hi_sdio->tx_buf + 64);
+            if (sum_len > 128)
+                printk(KERN_ERR "TXD %*ph\n", 32, hi_sdio->tx_buf + 128);
         }
     }
+    oal_sdio_claim_host(hi_sdio->func);
+   
+    /* a transfer of exactly 512 bytes must go out as one block, not as a
+       512-byte byte-mode CMD53 (count field 0), which this chip mishandles */
+    hi_sdio->func->card->quirks |= MMC_QUIRK_BROKEN_BYTE_MODE_512;
+       /* one CMD53 for the whole transfer, as stock does; the chip treats each
+       CMD53 as a complete transfer */
+    if (rw == SDIO_WRITE) {
+        ret = oal_sdio_writesb(hi_sdio->func, 0, hi_sdio->tx_buf, sum_len);
+    } else {
+        ret = oal_sdio_readsb(hi_sdio->func, 0, hi_sdio->rx_buf, sum_len);
+    }
+    printk(KERN_ERR "XF %c len=%u ret=%d\n", rw == SDIO_WRITE ? 0x57 : 0x52, sum_len, ret);
     oal_sdio_release_host(hi_sdio->func);
-
+      {
+        static int rxb_count;
+        if (rw == SDIO_READ && rxb_count < 40) {
+            rxb_count++;
+            printk(KERN_ERR "RXB ret=%d len=%u %*ph\n", ret, sum_len, 48, hi_sdio->rx_buf);
+        }
+    }
     /* copy received data to netbuf */
     if (rw == SDIO_READ) {
         oal_copy_data_to_uncbuf(hi_sdio, head, hi_sdio->rx_buf, sum_len);
@@ -715,7 +724,10 @@ hi_s32 oal_sdio_build_rx_list(oal_channel_stru *hi_sdio, hcc_data_queue *head)
 
         hcc_list_add_tail(head, unc_buf);
     }
-
+    printk(KERN_ERR "RXF xfer=0x%x sum=0x%x ext=%*ph comm=%*ph\n",
+           hi_sdio->sdio_extend->xfer_count, sum_len,
+           16, (hi_u8 *)hi_sdio->sdio_extend,
+           8, hi_sdio->sdio_extend->comm_reg);  
     if (oal_warn_on(hisdio_align_4_or_blk(sum_len) != hi_sdio->sdio_extend->xfer_count)) {
         oam_warning_log3("{[WIFI][E]scatt total len[0x%x] should = xfercount[0x%x],after pad len:0x%x}",
             sum_len, hi_sdio->sdio_extend->xfer_count, hisdio_align_4_or_blk(sum_len));
@@ -734,6 +746,31 @@ failed_unc_buf_alloc:
         oam_error_log0("oal_sdio_transfer_rx_reserved_buff fail\n");
     }
     return -OAL_ENOMEM;
+}
+static void hi3861l_st_read(struct sdio_func *func, u8 *buf, const char *tag, int len)
+{
+    int ret;
+
+    memset(buf, 0xEE, len);
+    ret = sdio_memcpy_fromio(func, buf, 0x30, len);
+    printk(KERN_ERR "ST %s len=%d ret=%d %*ph\n", tag, len, ret, 16, buf);
+}
+
+static void hi3861l_cmd53_selftest(struct sdio_func *func)
+{
+    u8 *buf = kzalloc(128, GFP_KERNEL);
+
+    if (!buf)
+        return;
+    sdio_claim_host(func);
+    hi3861l_st_read(func, buf, "A", 16);
+    hi3861l_st_read(func, buf, "B", 80);
+    hi3861l_st_read(func, buf, "C", 16);
+    msleep(1500);
+    hi3861l_st_read(func, buf, "D", 16);
+    hi3861l_st_read(func, buf, "E", 80);
+    sdio_release_host(func);
+    kfree(buf);
 }
 
 hi_s32 oal_sdio_dev_init(oal_channel_stru *hi_sdio)
@@ -776,8 +813,11 @@ hi_s32 oal_sdio_dev_init(oal_channel_stru *hi_sdio)
 
     oal_enable_sdio_state(hi_sdio, OAL_SDIO_ALL);
     oal_sdio_release_host(hi_sdio->func);
-
+    hi3861l_cmd53_selftest(func);
     return HI_SUCCESS;
+
+
+
 failed_enable_func1:
 failed_clear_func1_int:
 failed_set_block_size:
@@ -834,19 +874,18 @@ static hi_void oal_sdio_remove(struct sdio_func *func)
     sdio_set_drvdata(func, NULL);
     oam_error_log0("Hisilicon connectivity sdio driver has been removed.");
 }
-
 static hi_s32 oal_sdio_extend_buf_get(const oal_channel_stru *hi_sdio)
 {
-    hi_s32 ret = 0;
-    hi_u32 i;
-    hi_u8 *dst = (hi_u8 *)hi_sdio->sdio_extend;
-    /* The jzmmc host corrupts the 80-byte block read of this region; read it
-       byte-by-byte over CMD52 so comm_reg/xfer_count are trustworthy. */
-    for (i = 0; i < sizeof(hisdio_extend_func); i++) {
-        dst[i] = sdio_readb(hi_sdio->func, HISDIO_EXTEND_BASE_ADDR + i, &ret);
+    hi_s32 ret;
+
+    ret = oal_sdio_memcpy_fromio(hi_sdio->func, (hi_void *)hi_sdio->sdio_extend,
+        HISDIO_EXTEND_BASE_ADDR, sizeof(hisdio_extend_func));
+    if (ret != HI_SUCCESS) {
+    printk(KERN_ERR "EXT read ret=%d\n", ret);  
     }
-    return HI_SUCCESS;
+    return ret;
 }
+
 static hi_s32 oal_sdio_get_func1_int_status(const oal_channel_stru *hi_sdio, hi_u8 *int_stat)
 {
     hi_s32 ret = 0;
@@ -928,14 +967,24 @@ hi_s32 oal_sdio_msg_irq(oal_channel_stru *hi_sdio)
 
 hi_s32 oal_sdio_get_credit(const oal_channel_stru *hi_sdio, hi_u32 *uc_hipriority_cnt)
 {
-    hi_s32 ret = 0;
-    hi_u32 credit = 0;
-    /* stock reads the credit reg with the host claimed, via CMD53 incrementing
-       (sdio_memcpy_fromio). A CMD52 read on an unclaimed host returns 0. */
+    hi_s32 ret;
+    hi_u8 *buf = kzalloc(128, GFP_KERNEL);
+
+    if (buf == HI_NULL) {
+        return -1;
+    }
+    /* read ONLY the 4 credit bytes at 0x3c, as upstream does. A read that
+       starts at 0x30 also reads the chip's interrupt status, and that can
+       clear a pending "data ready" flag before the rx thread has seen it. */
     oal_sdio_claim_host(hi_sdio->func);
-    ret = oal_sdio_memcpy_fromio(hi_sdio->func, &credit, HISDIO_EXTEND_CREDIT_ADDR, sizeof(credit));
+    ret = oal_sdio_memcpy_fromio(hi_sdio->func, buf, HISDIO_EXTEND_CREDIT_ADDR, 4);
     oal_sdio_release_host(hi_sdio->func);
-    *uc_hipriority_cnt = credit;
+    if (ret == 0) {
+        memcpy(uc_hipriority_cnt, buf, 4);
+    } else {
+        printk(KERN_ERR "get_credit ret=%d\n", ret);
+    }
+    kfree(buf);
     return ret;
 }
 
@@ -1040,6 +1089,10 @@ hi_s32 oal_sdio_do_isr(oal_channel_stru *hi_sdio)
         return HI_SUCCESS;
     }
 
+    /* ack BEFORE reading the data: a DREADY the chip raises for the next
+       frame while we read this one must not be wiped by a late clear */
+    sdio_writeb(hi_sdio->func, (hi_u8)(int_mask & HISDIO_FUNC1_INT_MASK), 0x08, &aret);
+
     if (int_mask & HISDIO_FUNC1_INT_DREADY) {
         oam_warning_log1("do_isr int_mask=0x%x DREADY", int_mask);
     } else if (printk_ratelimit()) {
@@ -1058,7 +1111,6 @@ hi_s32 oal_sdio_do_isr(oal_channel_stru *hi_sdio)
         /* clear only the interrupts the ISR owns (DREADY|RERROR|MFARM).
      * ACK (0x8) belongs to oal_sdio_send_msg's synchronous poll now -
      * do NOT W1C it here or we steal it out from under the sender. */
-    sdio_writeb(hi_sdio->func, (hi_u8)(int_mask & HISDIO_FUNC1_INT_MASK), 0x08, &aret);
 
     return dret;
 }
@@ -1099,6 +1151,24 @@ static hi_s32 hcc_task_rx_gpio_thread(hi_void *data)
         }
         /* start to read GPIO interrupt */
         oal_sdio_isr(hi_sdio->func);
+        {
+            static unsigned long idle_next;
+            if (idle_next == 0 || time_after(jiffies, idle_next)) {
+                int r1 = 0, r2 = 0, r3 = 0;
+                unsigned char st, en;
+                unsigned char *eb = kzalloc(128, GFP_KERNEL);
+                idle_next = jiffies + 5 * HZ;
+                if (eb != NULL) {
+                    oal_sdio_claim_host(hi_sdio->func);
+                    st = sdio_readb(hi_sdio->func, 0x08, &r1);
+                    en = sdio_readb(hi_sdio->func, 0x09, &r2);
+                    r3 = sdio_memcpy_fromio(hi_sdio->func, eb, 0x38, 8);
+                    oal_sdio_release_host(hi_sdio->func);
+                    printk(KERN_ERR "IDLE st=%02x en=%02x ext=%*ph r=%d,%d,%d\n", st, en, 8, eb, r1, r2, r3);
+                    kfree(eb);
+                }
+            }
+        }
     }
     oam_info_log0("hcc_task_rx_gpio_thread is terminated");
     return HI_SUCCESS;
@@ -1252,7 +1322,7 @@ hi_s32 oal_sdio_func_probe(oal_channel_stru *hi_sdio, hi_s32 sdio_dev_num)
         return -OAL_EFAIL;
     }
     oal_init_completion(&g_sdio_driver_complete);
-    hi3861l_chip_reset();   /* TEST: do NOT warm-reset a freshly cold-booted chip */
+    //hi3861l_chip_reset();   /* TEST: do NOT warm-reset a freshly cold-booted chip */
     
 
     ret = oal_sdio_detectcard_to_core(sdio_dev_num);

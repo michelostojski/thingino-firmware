@@ -264,6 +264,14 @@ hi_s32 wal_rx_data_proc(oal_netbuf_stru *netbuf)
     oal_dev_put(netdev);
 
     /* 对protocol模式赋值 */
+    {
+        const unsigned char *d = (const unsigned char *)oal_netbuf_data(netbuf);
+        static int rxarp_count;
+        if (d[12] == 0x08 && d[13] == 0x06 && rxarp_count < 200) {
+            rxarp_count++;
+            printk(KERN_ERR "RXARP op=%u from %pI4 %pM to %pI4 ethdst %pM\n", d[21], d + 28, d + 22, d + 38, d);
+        }
+    }
     oal_netbuf_protocol(netbuf) = eth_type_trans(netbuf, netdev);
 
     return netif_rx_ni(netbuf);

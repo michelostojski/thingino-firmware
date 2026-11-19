@@ -1,0 +1,29 @@
+jzmmc: ignore error interrupts that arrive with no request in flight
+
+The tasklet forced STATE_ERROR on every error interrupt, including one that
+arrives after the request has completed. The state machine then called
+mmc_request_done() a second time on a stale host->mrq, whose cmd pointer is
+no longer valid, and the kernel panicked in interrupt context.
+
+Applies on top of 0099-jzmmc-drop-cmd53-crc-retry.patch.
+
+--- a/drivers/mmc/host/jzmmc_v12.c
++++ b/drivers/mmc/host/jzmmc_v12.c
+@@ -543,6 +543,17 @@
+ 		clear_msc_irq(host, mask);
+ 		disable_msc_irq(host, mask);
+ 
++		/*
++		 * A late error interrupt can arrive after the request has
++		 * already been completed. host->mrq is stale by then, so
++		 * completing it again dereferences freed stack memory.
++		 */
++		if (host->state == STATE_IDLE) {
++			dev_warn(host->dev, "stale error irq ignored, iflg=0x%08X status=0x%08X\n",
++				 iflg, status);
++			goto out;
++		}
++
+ 		host->state = STATE_ERROR;
+ 		jzmmc_state_machine(host, status);
+ 		goto out;

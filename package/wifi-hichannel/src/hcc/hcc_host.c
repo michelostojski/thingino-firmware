@@ -920,11 +920,12 @@ hi_u32 hcc_host_init(struct hcc_bus_adpta_ops* hcc_bus_adpta_opt)
 		goto failed_send_ready_msg;
 	}
 
-	/* re-enabled: our chip stays mute (no D2H at all) without this. Sent AFTER
-	 * SDIO_READY so the transport handshake completes first. Log-only on failure. */
+	#if 0 /* HEART_BEAT_OPEN: stock sends only SDIO_READY. Disabled to test whether
+       * the chip answers commands without it. */
 	if (oal_channel_send_msg(hcc_handler->hi_channel, H2D_MSG_HEART_BEAT_OPEN) != HI_SUCCESS) {
 		oam_error_log0("hcc_host_init:: start heartbeat fail");
 	}
+#endif
 
 	oam_warning_log0("hcc_host_init SUCCESSFULLY");
 	return HI_SUCCESS;

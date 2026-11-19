@@ -1,0 +1,32 @@
+jzmmc: drop the CMD53 read-CRC retry hack
+
+On a read CRC error for CMD53 the tasklet set cmd->retries = 1 and completed
+the request, so the MMC core re-issued the command without end and the state
+machine was left inconsistent. On an SDIO FIFO device this wedges the
+controller and the host then refuses the card. Report the error once instead.
+
+--- a/drivers/mmc/host/jzmmc_v12.c
++++ b/drivers/mmc/host/jzmmc_v12.c
+@@ -543,22 +543,6 @@
+ 		clear_msc_irq(host, mask);
+ 		disable_msc_irq(host, mask);
+ 
+-		/*
+-		 * It seems that cmd53 CRC error occurs frequently
+-		 * at 50mHz clk, but it disappear at 40mHz. In case of
+-		 * it happens, we add retry here to try to fix the error.
+-		 */
+-		if ((host->cmd->opcode == 53)
+-			&& (status & STAT_CRC_READ_ERROR)) {
+-			dev_err(host->dev, "cmd53 crc error, retry.\n");
+-			host->cmd->error = -1;
+-			host->cmd->retries = 1;
+-			host->data->bytes_xfered = 0;
+-			del_timer_sync(&host->request_timer);
+-			host->state = STATE_IDLE;
+-			mmc_request_done(host->mmc, host->mrq);
+-			goto out;
+-		}
+ 		host->state = STATE_ERROR;
+ 		jzmmc_state_machine(host, status);
+ 		goto out;
