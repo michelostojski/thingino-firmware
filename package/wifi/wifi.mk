@@ -119,6 +119,9 @@ WIFI_IS_FAMILY_MTK_FLAG  := $(if $(filter mt7%,$(WLAN_MODULE)),1,0)
 WIFI_IS_FAMILY_RTL_FLAG  := $(if $(filter rtl% 818% 87% 88%,$(WLAN_MODULE)),1,0)
 WIFI_IS_FAMILY_SSV_FLAG  := $(if $(filter ssv%,$(WLAN_MODULE)),1,0)
 WIFI_IS_ATBM6461_FLAG    := $(if $(filter BR2_PACKAGE_WIFI_ATBM6461,$(WIFI_DRIVER_BR2_PACKAGE)),1,0)
+# Chips whose own MCU firmware does the WPA handshake need the plain
+# passphrase, not the derived PSK that wpa_supplicant would use.
+WIFI_PLAIN_PSK_FLAG      := $(if $(filter BR2_PACKAGE_WIFI_ATBM6461 BR2_PACKAGE_WIFI_HICHANNEL,$(WIFI_DRIVER_BR2_PACKAGE)),1,0)
 
 # The mt7601sta vendor driver cannot bring up an AP with key_mgmt=NONE
 # (open); it requires a PSK. Give the portal AP a well-known PSK on those
@@ -158,6 +161,7 @@ WIFI_TEMPLATE_VARS = \
 	--var SOC_MODEL=$(SOC_MODEL) \
 	--var WIFI_MODULE_IS_SDIO=$(WIFI_MODULE_IS_SDIO_FLAG) \
 	--var WIFI_ATBM6461=$(WIFI_IS_ATBM6461_FLAG) \
+	--var WIFI_PLAIN_PSK=$(WIFI_PLAIN_PSK_FLAG) \
 	--var WIFI_SDIO_SET_GPIO=$(WIFI_SDIO_SET_GPIO_FLAG) \
 	--var WIFI_SDIO_RETURN_EARLY=$(WIFI_SDIO_RETURN_EARLY_FLAG) \
 	--var WIFI_SDIO_UNSUPPORTED=$(WIFI_SDIO_UNSUPPORTED_FLAG) \

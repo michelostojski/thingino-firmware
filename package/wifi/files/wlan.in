@@ -147,9 +147,10 @@ configure() {
 		exit 1
 	fi
 
-	@if WIFI_ATBM6461@
-	# ATBM6461 uses mcu_test for WiFi connection via MCU, not wpa_supplicant.
-	# Store plain text credentials for mcu_test to read at boot.
+	@if WIFI_PLAIN_PSK@
+	# ATBM6461 (mcu_test) and Hi3861L hichannel (hinl) connect through the
+	# chip's own MCU firmware, not wpa_supplicant. Store plain text
+	# credentials for S38wpa_supplicant to hand over at boot.
 	password=$(printf '%s' "$password" | tr -d '\r\n\t')
 	{
 		echo "# created on $(date +%c)"

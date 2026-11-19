@@ -423,6 +423,36 @@ start() {
 
 	echo "Starting in $mode mode"
 
+	# Hi3861L (hichannel): the chip associates and runs DHCP itself, so there
+	# is no wpa_supplicant and no AP or portal mode. hinl sends the stored
+	# credentials and copies the chip's MAC and address to the interface.
+	case "$WLAN_MODULE_NAME" in
+		hichannel*)
+			if [ "$mode" != "client" ]; then
+				echo "hichannel: no Wi-Fi credentials and no portal on this chip" >&2
+				echo "Set them with: wlan configure <ssid> <password>" >&2
+				exit 0
+			fi
+			wifi_ssid=$(grep 'ssid=' $CONFIG | head -1 | sed 's/.*ssid="\([^"]*\)".*/\1/')
+			wifi_pass=$(grep 'psk=' $CONFIG | head -1 | sed 's/.*psk="\([^"]*\)".*/\1/')
+			if [ -z "$wifi_ssid" ] || [ -z "$wifi_pass" ]; then
+				echo "hichannel: could not read SSID or password from $CONFIG" >&2
+				exit 0
+			fi
+			# the chip owns the lease; keep ifup from starting a DHCP client
+			sed -i "s/iface $IFACE inet dhcp/iface $IFACE inet manual/" "$WLAN_INT_FILE"
+			(umask 077 && printf 'ssid=%s\npass=%s\n' "$wifi_ssid" "$wifi_pass" >/run/hinl.conf)
+			echo "Connecting via hinl: $wifi_ssid"
+			if hinl up /run/hinl.conf >/tmp/hinl.log 2>&1; then
+				echo "hichannel: $(tail -1 /tmp/hinl.log)"
+			else
+				echo "WARNING: hinl up failed, see /tmp/hinl.log" >&2
+			fi
+			rm -f /run/hinl.conf
+			exit 0
+			;;
+	esac
+
 	# ATBM6461: use mcu_test instead of wpa_supplicant for client mode
 	case "$WLAN_MODULE_NAME" in
 		atbm6461*)

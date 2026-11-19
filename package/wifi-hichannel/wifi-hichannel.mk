@@ -37,8 +37,8 @@ endef
 
 # tools/hinl.c is the userspace side: it talks to the chip's application
 # firmware over netlink 28 (watchdog off, Wi-Fi connect, copy the chip's
-# DHCP lease to wlan0).  S39hinl runs "hinl up" at boot when /etc/hinl.conf
-# (ssid=, pass=) exists.
+# DHCP lease to wlan0).  package/wifi's S38wpa_supplicant calls "hinl up"
+# with the credentials from /etc/wpa_supplicant.conf.
 #
 # Build the module via kbuild against the kernel tree.  The driver Makefile
 # defines obj-m / EXTRA_CFLAGS unconditionally at parse time (env_config.mk
@@ -58,8 +58,6 @@ define WIFI_HICHANNEL_INSTALL_TARGET_CMDS
 	$(INSTALL) -D -m 0644 $(@D)/$(HICHANNEL_MODULE_NAME).ko \
 		$(TARGET_DIR)/usr/lib/modules/$(KERNEL_VERSION)$(call qstrip,$(LINUX_CONFIG_LOCALVERSION))/extra/$(HICHANNEL_MODULE_NAME).ko
 	$(INSTALL) -D -m 0755 $(@D)/tools/hinl $(TARGET_DIR)/usr/bin/hinl
-	$(INSTALL) -D -m 0755 $(WIFI_HICHANNEL_PKGDIR)/files/S39hinl \
-		$(TARGET_DIR)/etc/init.d/S39hinl
 endef
 
 $(eval $(kernel-module))

@@ -13,10 +13,11 @@ config BR2_PACKAGE_WIFI_HICHANNEL
 	  0101 mask stale data errors for CMD52) and pull-ups on the
 	  SDIO CMD/DAT0 pins (package/wifi/files/mmc_gpio_pb).
 
-	  Also installs /usr/bin/hinl and /etc/init.d/S39hinl.  The chip
-	  associates and runs DHCP itself; "hinl up" sends the credentials
-	  from /etc/hinl.conf (ssid=, pass=) and copies the chip's MAC and
-	  address to wlan0.
+	  Also installs /usr/bin/hinl.  The chip associates and runs DHCP
+	  itself; S38wpa_supplicant calls "hinl up" with the credentials
+	  from /etc/wpa_supplicant.conf, and hinl copies the chip's MAC and
+	  address to wlan0.  There is no AP or portal mode: set credentials
+	  with "wlan configure <ssid> <password>".
 
 	  Do not enable together with BR2_PACKAGE_WIFI_HI3881 - both drivers
 	  claim the same SDIO WiFi device.
