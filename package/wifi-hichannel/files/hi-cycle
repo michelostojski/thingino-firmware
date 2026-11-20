@@ -1,0 +1,109 @@
+#!/bin/sh
+# CG721 battery cycle. The Hi3861L powers the T31 on when something happens
+# (motion, button, ...). This script runs once per boot: it records why the
+# camera woke and the battery state, optionally reports and runs an event
+# hook, stays up for a while, then asks the chip to power the T31 off again.
+#
+# It never sleeps unless /etc/hi-cycle.conf says enabled=1, and never while
+# the charger is connected or a "nosleep" file exists.
+
+CONF=/etc/hi-cycle.conf
+STATE=/tmp/hi-cycle.state
+LOG=/tmp/hi-cycle.log
+
+enabled=0            # 1 = go back to sleep after the awake window
+awake=120            # seconds to stay up after a wake on battery
+sleep_on_charger=0   # 1 = sleep even with the charger connected
+min_level=0          # below this battery level (percent) sleep immediately
+send2mqtt=0          # 1 = publish the state with Thingino's send2mqtt
+                     #     (broker settings from the web UI, /etc/send2.json)
+mqtt_host=           # or: publish directly with mosquitto_pub to this broker
+mqtt_port=1883
+mqtt_topic=cg721
+mqtt_user=
+mqtt_pass=
+hook=/etc/hi-cycle.event   # optional executable, run once per wake
+stop_streamer=1      # 1 = stop raptor before sleeping, so the recorder
+                     #     closes its file before power is cut
+
+[ -f "$CONF" ] && . "$CONF"
+
+log() { echo "$(cut -d' ' -f1 /proc/uptime) $*" >>"$LOG"; }
+
+nosleep() {
+	[ -e /etc/nosleep ] || [ -e /tmp/nosleep ] || [ -e /mnt/mmcblk0p1/nosleep ]
+}
+
+read_state() {
+	hinl status >"$STATE.new" 2>/dev/null || return 1
+	mv "$STATE.new" "$STATE"
+	. "$STATE"
+}
+
+# hinl up (from S38wpa_supplicant) must be finished: one talker at a time
+i=0
+while pidof hinl >/dev/null && [ $i -lt 60 ]; do sleep 1; i=$((i + 1)); done
+
+if ! read_state; then
+	log "chip did not answer; staying awake"
+	exit 0
+fi
+log "wake_reason=$wake_reason charger=$charger level=$battery_level mv=$battery_mv"
+
+json="{\"wake_reason\":$wake_reason,\"charger\":$charger,\"battery_level\":$battery_level,\"battery_mv\":$battery_mv}"
+if [ "$send2mqtt" = 1 ] && command -v send2mqtt >/dev/null 2>&1; then
+	if send2mqtt -t "$mqtt_topic/state" -m "$json" >/dev/null 2>&1; then
+		log "state published (send2mqtt)"
+	else
+		log "send2mqtt failed"
+	fi
+elif [ -n "$mqtt_host" ] && command -v mosquitto_pub >/dev/null 2>&1; then
+	auth=""
+	[ -n "$mqtt_user" ] && auth="-u $mqtt_user -P $mqtt_pass"
+	# shellcheck disable=SC2086 # auth is two words on purpose
+	if mosquitto_pub -h "$mqtt_host" -p "$mqtt_port" $auth -r -t "$mqtt_topic/state" \
+		-m "$json" >/dev/null 2>&1; then
+		log "state published (mosquitto_pub)"
+	else
+		log "mqtt publish failed"
+	fi
+fi
+
+if [ -x "$hook" ]; then
+	WAKE_REASON=$wake_reason CHARGER=$charger BATTERY_LEVEL=$battery_level \
+		BATTERY_MV=$battery_mv "$hook" >>"$LOG" 2>&1 &
+fi
+
+if [ "$enabled" != 1 ]; then
+	log "sleep disabled (enabled=0 in $CONF)"
+	exit 0
+fi
+
+if [ "$battery_level" -ge "$min_level" ]; then
+	log "awake for ${awake}s"
+	sleep "$awake"
+else
+	log "battery below ${min_level}%, sleeping now"
+fi
+
+# re-read: the charger may have been plugged in meanwhile
+read_state || { log "chip did not answer before sleep; staying awake"; exit 0; }
+
+if nosleep; then
+	log "nosleep file present; staying awake"
+	exit 0
+fi
+if [ "$charger" = 1 ] && [ "$sleep_on_charger" != 1 ]; then
+	log "charger connected; staying awake"
+	exit 0
+fi
+
+log "going to sleep"
+if [ "$stop_streamer" = 1 ] && [ -x /etc/init.d/S31raptor ]; then
+	# power is cut hard: let the recorder finish its segment first
+	/etc/init.d/S31raptor stop >/dev/null 2>&1
+fi
+[ -d /mnt/mmcblk0p1 ] && cat "$LOG" >>/mnt/mmcblk0p1/hi-cycle.log 2>/dev/null
+sync
+umount /mnt/mmcblk0p1 2>/dev/null
+hinl sleep

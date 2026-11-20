@@ -1,0 +1,11 @@
+#!/bin/sh
+# CG721: run the battery wake/sleep cycle once the system is up.
+case "$1" in
+	start)
+		/usr/sbin/hi-cycle &
+		;;
+	stop)
+		killall hi-cycle 2>/dev/null
+		;;
+esac
+exit 0

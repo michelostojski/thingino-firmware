@@ -58,6 +58,10 @@ define WIFI_HICHANNEL_INSTALL_TARGET_CMDS
 	$(INSTALL) -D -m 0644 $(@D)/$(HICHANNEL_MODULE_NAME).ko \
 		$(TARGET_DIR)/usr/lib/modules/$(KERNEL_VERSION)$(call qstrip,$(LINUX_CONFIG_LOCALVERSION))/extra/$(HICHANNEL_MODULE_NAME).ko
 	$(INSTALL) -D -m 0755 $(@D)/tools/hinl $(TARGET_DIR)/usr/bin/hinl
+	$(INSTALL) -D -m 0755 $(WIFI_HICHANNEL_PKGDIR)/files/hi-cycle \
+		$(TARGET_DIR)/usr/sbin/hi-cycle
+	$(INSTALL) -D -m 0755 $(WIFI_HICHANNEL_PKGDIR)/files/S99hi-cycle \
+		$(TARGET_DIR)/etc/init.d/S99hi-cycle
 endef
 
 $(eval $(kernel-module))
