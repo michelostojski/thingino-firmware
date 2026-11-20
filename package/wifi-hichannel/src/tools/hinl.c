@@ -324,13 +324,17 @@ static int do_status(void)
    stays associated and powers the SoC on again on a wake event. ---- */
 static int do_sleep(void)
 {
-    unsigned char st = 0;
+    unsigned char st = 0, on = 1;
     int s = nl_open();
 
     if (s < 0) {
         perror("netlink 28");
         return 1;
     }
+    /* make sure the PIR can wake us: switch it on (0x87 01) before every
+       sleep rather than relying on the chip having kept the setting */
+    nl_cmd(s, 0x87, &on, 1);
+    sleep(1);
     sync();
     nl_cmd(s, 0x8e, &st, 1);
     sleep(5);          /* power is normally gone before this returns */
@@ -349,6 +353,10 @@ int main(int argc, char **argv)
 
     setvbuf(stdout, NULL, _IOLBF, 0);
 
+    if (argc >= 2 && strcmp(argv[1], "version") == 0) {
+        printf("hinl 6 (reconnect, pir-on-sleep)\n");
+        return 0;
+    }
     if (argc >= 2 && strcmp(argv[1], "status") == 0)
         return do_status();
     if (argc >= 2 && strcmp(argv[1], "sleep") == 0)
