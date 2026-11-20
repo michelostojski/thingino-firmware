@@ -162,11 +162,26 @@ static int run(const char *fmt, ...)
     return system(cmd);
 }
 
+static int nl_query(int s, unsigned id, const unsigned char *pay, int plen,
+                    unsigned char *r, int max);
+
+/* is the byte string needle somewhere in hay? */
+static int has_bytes(const unsigned char *hay, int hlen, const char *needle)
+{
+    int nlen = (int)strlen(needle), i;
+
+    for (i = 0; nlen > 0 && i + nlen <= hlen; i++)
+        if (memcmp(hay + i, needle, nlen) == 0)
+            return 1;
+    return 0;
+}
+
 static int do_up(const char *conf)
 {
     unsigned char pay[134], r[256], dns[4] = {0}, off = 0;
     char ssid[65], pass[65], wdg[16], dnsconf[32];
     const unsigned char *ip, *mk, *gw, *mac;
+    unsigned char st[256];
     int s, n, t, have = 0;
 
     conf_get(conf, "ssid", ssid, sizeof(ssid));
@@ -192,17 +207,35 @@ static int do_up(const char *conf)
         printf("watchdog: off\n");
     }
 
-    memset(pay, 0, sizeof(pay));
-    snprintf((char *)pay, 65, "%s", ssid);
-    if (pass[0]) {
-        snprintf((char *)pay + 65, 65, "%s", pass);
-        pay[130] = 4;
+    /* The chip stays associated while the SoC sleeps or reboots. If it is
+       already on the configured network and holds an address, use that:
+       a second connect request on top of a live connection can leave the
+       chip ignoring connects until it is told to disconnect. */
+    n = nl_query(s, 0x8c, NULL, 0, st, sizeof(st));
+    if (n > 0 && has_bytes(st, n, ssid)) {
+        n = nl_query(s, 0x81, NULL, 0, r, sizeof(r));
+        if (n >= 23 && r[5]) {
+            have = 1;
+            printf("already connected to \"%s\"\n", ssid);
+        }
     }
-    nl_cmd(s, 0x8a, pay, sizeof(pay));
-    printf("connect sent for \"%s\"\n", ssid);
+
+    if (!have) {
+        /* start from a clean state, then connect */
+        nl_cmd(s, 0x8b, NULL, 0);
+        sleep(2);
+        memset(pay, 0, sizeof(pay));
+        snprintf((char *)pay, 65, "%s", ssid);
+        if (pass[0]) {
+            snprintf((char *)pay + 65, 65, "%s", pass);
+            pay[130] = 4;
+        }
+        nl_cmd(s, 0x8a, pay, sizeof(pay));
+        printf("connect sent for \"%s\"\n", ssid);
+    }
 
     /* poll get_ip_info (0x81) until the chip reports an address */
-    for (t = 0; t < 45 && !have; t++) {
+    for (t = 0; t < 60 && !have; t++) {
         int tries = 5;
 
         nl_cmd(s, 0x81, NULL, 0);
@@ -217,7 +250,7 @@ static int do_up(const char *conf)
     }
     close(s);
     if (!have) {
-        fprintf(stderr, "no address from the chip after 45 s\n");
+        fprintf(stderr, "no address from the chip after 60 s\n");
         return 1;
     }
     ip = r + 5; mk = r + 9; gw = r + 13; mac = r + 17;
